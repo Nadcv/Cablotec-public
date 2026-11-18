@@ -42,19 +42,30 @@
     msg.textContent = 'Sem ligação à internet. A aplicação precisa de rede para abrir.';
     document.querySelector('.barra').style.display = 'none'; bt.style.display = 'block';
   }
-  if (!navigator.onLine) semRede();
-  else {
+  function abrirEmMoldura() {   // alternativa antiga (moldura do Google)
     var f = document.getElementById('app');
     f.addEventListener('load', function () { entrada.classList.add('oculto'); });
-    f.src = APP + location.search;   // passa parâmetros (ex.: ?modo=kiosk)
-    setTimeout(function () { if (!entrada.classList.contains('oculto')) msg.textContent = 'A ligar ao servidor… (pode demorar alguns segundos)'; }, 6000);
-    // se a moldura não abrir (ex.: browser do Gmail), oferece abrir a aplicação diretamente
+    f.src = APP + location.search;
+  }
+  if (!navigator.onLine) semRede();
+  else {
+    // Vai buscar a página da aplicação e mostra-a aqui mesmo, sem moldura do Google
+    // (assim não aparece "não é possível abrir o ficheiro" quando há várias contas Google).
+    var parametros = location.search ? '&' + location.search.slice(1) : '';
+    fetch(APP + '?action=paginaApp' + parametros)
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || d.status !== 'ok' || !d.html) throw new Error('resposta inválida');
+        document.open(); document.write(d.html); document.close();
+      })
+      .catch(function () { abrirEmMoldura(); });
+    setTimeout(function () { if (document.getElementById('msg')) msg.textContent = 'A ligar ao servidor… (pode demorar alguns segundos)'; }, 6000);
     setTimeout(function () {
-      if (entrada.classList.contains('oculto')) return;
+      if (!document.getElementById('entrada') || entrada.classList.contains('oculto')) return;
       msg.textContent = 'Está a demorar. Pode abrir a aplicação diretamente:';
       bt.textContent = 'Abrir aplicação'; bt.onclick = function () { location.href = APP + location.search; };
       bt.style.display = 'block';
-    }, 15000);
+    }, 25000);
   }
   window.addEventListener('online', function () { if (bt.style.display === 'block') location.reload(); });
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
