@@ -48,6 +48,13 @@
     f.addEventListener('load', function () { entrada.classList.add('oculto'); });
     f.src = APP + location.search;   // passa parâmetros (ex.: ?modo=kiosk)
     setTimeout(function () { if (!entrada.classList.contains('oculto')) msg.textContent = 'A ligar ao servidor… (pode demorar alguns segundos)'; }, 6000);
+    // se a moldura não abrir (ex.: browser do Gmail), oferece abrir a aplicação diretamente
+    setTimeout(function () {
+      if (entrada.classList.contains('oculto')) return;
+      msg.textContent = 'Está a demorar. Pode abrir a aplicação diretamente:';
+      bt.textContent = 'Abrir aplicação'; bt.onclick = function () { location.href = APP + location.search; };
+      bt.style.display = 'block';
+    }, 15000);
   }
   window.addEventListener('online', function () { if (bt.style.display === 'block') location.reload(); });
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
