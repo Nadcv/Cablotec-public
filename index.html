@@ -57,17 +57,28 @@
     if (mostrada) return; mostrada = true;
     document.open(); document.write(html); document.close();
   }
-  function buscarPagina(ms) {
+  var ultimoErro = '';
+  function pedido(metodo, ms) {
     var ctrl = window.AbortController ? new AbortController() : null;
     var t = ctrl ? setTimeout(function () { ctrl.abort(); }, ms) : null;
-    return fetch(APP + '?action=paginaApp', ctrl ? { signal: ctrl.signal } : {})
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
+    var op = metodo === 'POST'
+      ? { method: 'POST', body: JSON.stringify({ acao: 'paginaApp' }), redirect: 'follow' }
+      : { method: 'GET', redirect: 'follow' };
+    if (ctrl) op.signal = ctrl.signal;
+    return fetch(metodo === 'POST' ? APP : APP + '?action=paginaApp', op)
+      .then(function (r) { return r.text(); })
+      .then(function (txt) {
         if (t) clearTimeout(t);
+        var d = JSON.parse(txt);
         if (!d || d.status !== 'ok' || !d.html) throw new Error('resposta inválida');
         try { localStorage.setItem(CHAVE_PAGINA, d.html); localStorage.setItem(CHAVE_DATA, String(Date.now())); } catch (e) {}
         return d.html;
-      });
+      })
+      .catch(function (e) { if (t) clearTimeout(t); ultimoErro = metodo + ': ' + (e && (e.name === 'AbortError' ? 'sem resposta' : e.message) || e); throw e; });
+  }
+  // POST (o mesmo caminho da app dos seriais); se falhar, tenta por GET
+  function buscarPagina(ms) {
+    return pedido('POST', ms).catch(function () { return pedido('GET', ms); });
   }
   var recente = guardada && (Date.now() - dataGuardada < 7 * 24 * 3600 * 1000);
   if (recente) {
@@ -77,9 +88,9 @@
   } else if (!navigator.onLine) {
     if (guardada) mostrar(guardada); else semRede();
   } else {
-    buscarPagina(45000).then(mostrar).catch(function () {
+    buscarPagina(25000).then(mostrar).catch(function () {
       if (guardada) { mostrar(guardada); return; }
-      msg.textContent = 'O servidor não respondeu. Verifique a internet e tente de novo.';
+      msg.innerHTML = 'O servidor não respondeu. Verifique a internet e tente de novo.<br><small style="color:#999">(' + ultimoErro.replace(/</g, '&lt;') + ')</small>';
       document.querySelector('.barra').style.display = 'none';
       bt.textContent = 'Tentar de novo'; bt.onclick = function () { location.reload(); }; bt.style.display = 'block';
     });
