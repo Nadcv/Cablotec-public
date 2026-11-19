@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#3a393a">
+<title>Ficha do equipamento</title>
+<style>
+  body{margin:0;font-family:-apple-system,Roboto,Arial,sans-serif;background:#f1f3f6;color:#222}
+  #espera{padding:60px 20px;text-align:center;color:#555}
+  #espera a{color:#c9272e;font-weight:600}
+</style>
+</head>
+<body>
+<div id="c"><div id="espera">A abrir a ficha…</div></div>
+<script>
+/* Mostra a ficha de um equipamento da app dos seriais sem passar pela página do Google
+   (que dá "não é possível abrir o ficheiro" quando o telemóvel tem várias contas Google). */
+(function () {
+  var p = new URLSearchParams(location.search);
+  var id = p.get('id') || '', srv = p.get('s') || '';
+  var c = document.getElementById('c');
+  if (!/^[\w-]{10,}$/.test(id) || !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(srv)) {
+    c.innerHTML = '<div id="espera">Link da ficha inválido.</div>'; return;
+  }
+  var direto = srv + '?id=' + encodeURIComponent(id);
+  fetch(srv + '?api=ficha&id=' + encodeURIComponent(id))
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d || !d.ok || !d.html) throw new Error();
+      c.innerHTML = d.html;
+      var t = c.querySelector('.serial'); if (t) document.title = 'Serial ' + t.textContent.trim();
+    })
+    .catch(function () {
+      c.innerHTML = '<div id="espera">Não foi possível abrir a ficha agora.<br><br><a href="' + direto + '">Tentar abrir diretamente</a></div>';
+    });
+})();
+</script>
+</body>
+</html>
