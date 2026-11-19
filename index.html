@@ -53,10 +53,26 @@
   var guardada = null, dataGuardada = 0;
   try { guardada = localStorage.getItem(CHAVE_PAGINA); dataGuardada = +localStorage.getItem(CHAVE_DATA) || 0; } catch (e) {}
   var mostrada = false;
+  var htmlMostrado = '';
   function mostrar(html) {
-    if (mostrada) return; mostrada = true;
+    if (mostrada) return; mostrada = true; htmlMostrado = html;
     document.open(); document.write(html); document.close();
   }
+  // Versão nova encontrada em segundo plano: aviso no topo (toque = atualizar)
+  function avisarVersaoNova() {
+    if (!mostrada || document.getElementById('avisoVersaoApp')) return;
+    var b = document.createElement('div'); b.id = 'avisoVersaoApp';
+    b.style.cssText = 'position:fixed;left:10px;right:10px;top:10px;z-index:99997;background:#3a393a;color:#fff;border-left:5px solid #c9272e;border-radius:10px;padding:12px 14px;font:15px -apple-system,Roboto,Arial,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.3)';
+    b.innerHTML = '🔄 <b>Há uma versão nova da aplicação.</b><br>Toque aqui para atualizar (guarde primeiro o que estiver a preencher).';
+    b.onclick = function () { location.reload(); };
+    document.body.appendChild(b);
+  }
+  function verificarVersao(html) { if (html && htmlMostrado && html !== htmlMostrado) avisarVersaoNova(); }
+  var escondidaDesde = 0;
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { escondidaDesde = Date.now(); return; }
+    if (mostrada && Date.now() - escondidaDesde > 60000 && navigator.onLine) buscarPagina(60000).then(verificarVersao).catch(function () {});
+  });
   var ultimoErro = '';
   function pedido(metodo, ms) {
     var ctrl = window.AbortController ? new AbortController() : null;
@@ -83,7 +99,7 @@
   var recente = guardada && (Date.now() - dataGuardada < 7 * 24 * 3600 * 1000);
   if (recente) {
     // abre já; a versão nova fica guardada para a próxima vez
-    buscarPagina(60000).catch(function () {});
+    buscarPagina(60000).then(function (novo) { setTimeout(function () { verificarVersao(novo); }, 500); }).catch(function () {});
     setTimeout(function () { mostrar(guardada); }, 50);
   } else if (!navigator.onLine) {
     if (guardada) mostrar(guardada); else semRede();
