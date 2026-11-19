@@ -90,7 +90,7 @@
   } else {
     buscarPagina(25000).then(mostrar).catch(function () {
       if (guardada) { mostrar(guardada); return; }
-      msg.innerHTML = 'O servidor não respondeu. Verifique a internet e tente de novo.<br><small style="color:#999">(' + ultimoErro.replace(/</g, '&lt;') + ')</small>';
+      msg.innerHTML = 'Não foi possível ligar ao servidor.<br><br>Se estiver num <b>Wi-Fi público</b> (hotel, café), abra o Safari e aceite a página da rede, ou desligue o Wi-Fi e use os <b>dados móveis</b>.<br><small style="color:#999">(' + ultimoErro.replace(/</g, '&lt;') + ')</small>';
       document.querySelector('.barra').style.display = 'none';
       bt.textContent = 'Tentar de novo'; bt.onclick = function () { location.reload(); }; bt.style.display = 'block';
     });
