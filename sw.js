@@ -1,6 +1,6 @@
 // Guarda a "casca" da aplicação (ecrã de entrada, ícones) para abrir mesmo com rede fraca.
 // A aplicação em si corre no Google Apps Script e precisa de rede.
-const CACHE = 'cablotec-v9';
+const CACHE = 'cablotec-v10';
 const FICHEIROS = ['./', './index.html', './manifest.webmanifest', './icons/logo-cablotec.png',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => {
