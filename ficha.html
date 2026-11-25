@@ -41,15 +41,31 @@
     c.innerHTML = '<div id="espera">Link da ficha inválido.</div>'; return;
   }
   var direto = srv + '?id=' + encodeURIComponent(id);
-  fetch(srv + '?api=ficha&id=' + encodeURIComponent(id))
-    .then(function (r) { return r.json(); })
+  function pedir(tentativa) {
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var t = setTimeout(function () { if (ctrl) ctrl.abort(); }, 45000);
+    return fetch(srv + '?api=ficha&id=' + encodeURIComponent(id) + '&t=' + Date.now(), ctrl ? { signal: ctrl.signal, cache: 'no-store' } : {})
+      .then(function (r) { clearTimeout(t); return r.json(); })
+      .catch(function (e) {
+        clearTimeout(t);
+        if (tentativa < 2) {
+          c.innerHTML = '<div id="espera">A ligação está lenta, a tentar de novo…</div>';
+          return new Promise(function (ok) { setTimeout(ok, 1500); }).then(function () { return pedir(tentativa + 1); });
+        }
+        throw e;
+      });
+  }
+  pedir(1)
     .then(function (d) {
       if (!d || !d.ok || !d.html) throw new Error();
       c.innerHTML = d.html;
       var t = c.querySelector('.serial'); if (t) document.title = 'Serial ' + t.textContent.trim();
     })
     .catch(function () {
-      c.innerHTML = '<div id="espera">Não foi possível abrir a ficha agora.<br><br><a href="' + direto + '">Tentar abrir diretamente</a></div>';
+      // Esta rede/browser bloqueou o pedido (ex.: rede da empresa): abre a ficha diretamente no Google.
+      c.innerHTML = '<div id="espera">Esta rede não deixou carregar a ficha aqui.<br>A abrir diretamente no Google…<br><br>' +
+        '<a href="' + direto + '">Se não abrir, carregue aqui</a></div>';
+      setTimeout(function () { location.href = direto; }, 1200);
     });
 })();
 </script>
