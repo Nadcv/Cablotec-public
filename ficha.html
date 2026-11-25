@@ -43,7 +43,7 @@
   var direto = srv + '?id=' + encodeURIComponent(id);
   function pedir(tentativa) {
     var ctrl = window.AbortController ? new AbortController() : null;
-    var t = setTimeout(function () { if (ctrl) ctrl.abort(); }, 45000);
+    var t = setTimeout(function () { if (ctrl) ctrl.abort(); }, 12000);
     return fetch(srv + '?api=ficha&id=' + encodeURIComponent(id) + '&t=' + Date.now(), ctrl ? { signal: ctrl.signal, cache: 'no-store' } : {})
       .then(function (r) { clearTimeout(t); return r.json(); })
       .catch(function (e) {
@@ -55,6 +55,11 @@
         throw e;
       });
   }
+  // Passados 5 s sem resposta, mostra já a opção de abrir diretamente
+  setTimeout(function () {
+    var e = document.getElementById('espera');
+    if (e && !document.getElementById('linkDireto')) e.insertAdjacentHTML('beforeend', '<br><br><a id="linkDireto" href="' + direto + '">Está a demorar? Abrir diretamente</a>');
+  }, 5000);
   pedir(1)
     .then(function (d) {
       if (!d || !d.ok || !d.html) throw new Error();
